@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🌤️ API del Clima</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 20px;
+      color: white;
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      margin-bottom: 8px;
+      text-align: center;
+    }
+
+    p.subtitulo {
+      color: #a0aec0;
+      margin-bottom: 40px;
+      font-size: 1rem;
+    }
+
+    .buscador {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 40px;
+      width: 100%;
+      max-width: 500px;
+    }
+
+    .buscador input {
+      flex: 1;
+      padding: 14px 20px;
+      border-radius: 12px;
+      border: none;
+      font-size: 1rem;
+      background: rgba(255,255,255,0.1);
+      color: white;
+      outline: none;
+      backdrop-filter: blur(10px);
+    }
+
+    .buscador input::placeholder { color: #a0aec0; }
+
+    .buscador button {
+      padding: 14px 24px;
+      border-radius: 12px;
+      border: none;
+      background: #4299e1;
+      color: white;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .buscador button:hover { background: #3182ce; }
+
+    .tabs {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 30px;
+    }
+
+    .tab {
+      padding: 10px 20px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.2);
+      background: rgba(255,255,255,0.05);
+      color: white;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .tab.activo {
+      background: #4299e1;
+      border-color: #4299e1;
+    }
+
+    .card {
+      background: rgba(255,255,255,0.08);
+      backdrop-filter: blur(20px);
+      border-radius: 20px;
+      padding: 30px;
+      width: 100%;
+      max-width: 500px;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .dato {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      font-size: 1rem;
+    }
+
+    .dato:last-child { border-bottom: none; }
+    .dato .label { color: #a0aec0; }
+    .dato .valor { font-weight: 600; font-size: 1.1rem; }
+
+    .pronostico-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .dia-card {
+      background: rgba(255,255,255,0.05);
+      border-radius: 12px;
+      padding: 12px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .temperatura { font-weight: 700; color: #fbd38d; }
+    .lluvia { color: #90cdf4; font-size: 0.85rem; }
+
+    .error {
+      color: #fc8181;
+      text-align: center;
+      padding: 20px;
+      font-size: 1rem;
+    }
+
+    .loading {
+      text-align: center;
+      color: #a0aec0;
+      padding: 20px;
+    }
+
+    .ciudad-titulo {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .pais {
+      color: #a0aec0;
+      margin-bottom: 20px;
+      font-size: 0.9rem;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>🌤️ API del Clima</h1>
+  <p class="subtitulo">Consulta el clima de cualquier ciudad del mundo</p>
+
+  <div class="buscador">
+    <input type="text" id="inputCiudad" placeholder="Ej: Cancun, Madrid, Tokyo..." />
+    <button onclick="buscar()">Buscar</button>
+  </div>
+
+  <div class="tabs">
+    <button class="tab activo" onclick="cambiarTab('clima')">🌡️ Clima</button>
+    <button class="tab" onclick="cambiarTab('pronostico')">📅 Pronóstico</button>
+    <button class="tab" onclick="cambiarTab('coordenadas')">📍 Coordenadas</button>
+  </div>
+
+  <div class="card" id="resultado">
+    <p class="loading">Escribe una ciudad y presiona Buscar 🔍</p>
+  </div>
+
+  <script>
+    let tabActual = 'clima';
+
+    function cambiarTab(tab) {
+      tabActual = tab;
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('activo'));
+      event.target.classList.add('activo');
+      const ciudad = document.getElementById('inputCiudad').value;
+      if (ciudad) buscar();
+    }
+
+    async function buscar() {
+      const ciudad = document.getElementById('inputCiudad').value.trim();
+      if (!ciudad) return;
+
+      const resultado = document.getElementById('resultado');
+      resultado.innerHTML = '<p class="loading">Cargando... ⏳</p>';
+
+      try {
+        const res = await fetch(`/api/${tabActual}?ciudad=${encodeURIComponent(ciudad)}`);
+        const data = await res.json();
+
+        if (data.error) {
+          resultado.innerHTML = `<p class="error">❌ ${data.error}</p>`;
+          return;
+        }
+
+        if (tabActual === 'clima') mostrarClima(data);
+        if (tabActual === 'pronostico') mostrarPronostico(data);
+        if (tabActual === 'coordenadas') mostrarCoordenadas(data);
+
+      } catch (e) {
+        resultado.innerHTML = '<p class="error">❌ Error al conectar con la API</p>';
+      }
+    }
+
+    function mostrarClima(data) {
+      document.getElementById('resultado').innerHTML = `
+        <div class="ciudad-titulo">📍 ${data.ciudad}</div>
+        <div class="pais">${data.pais}</div>
+        <div class="dato"><span class="label">🌡️ Temperatura</span><span class="valor">${data.temperatura}</span></div>
+        <div class="dato"><span class="label">💨 Viento</span><span class="valor">${data.viento}</span></div>
+        <div class="dato"><span class="label">☀️ Es de día</span><span class="valor">${data.es_de_dia}</span></div>
+        <div class="dato"><span class="label">🕐 Actualizado</span><span class="valor">${data.actualizado}</span></div>
+      `;
+    }
+
+    function mostrarPronostico(data) {
+      const dias = data.pronostico.map(d => `
+        <div class="dia-card">
+          <span>${d.fecha}</span>
+          <span class="temperatura">↑${d.temp_maxima} ↓${d.temp_minima}</span>
+          <span class="lluvia">🌧️ ${d.precipitacion}</span>
+        </div>
+      `).join('');
+
+      document.getElementById('resultado').innerHTML = `
+        <div class="ciudad-titulo">📍 ${data.ciudad}</div>
+        <div class="pais">${data.pais}</div>
+        <div class="pronostico-grid">${dias}</div>
+      `;
+    }
+
+    function mostrarCoordenadas(data) {
+      document.getElementById('resultado').innerHTML = `
+        <div class="ciudad-titulo">📍 ${data.nombre}</div>
+        <div class="pais">${data.pais}</div>
+        <div class="dato"><span class="label">🌐 Latitud</span><span class="valor">${data.latitud}</span></div>
+        <div class="dato"><span class="label">🌐 Longitud</span><span class="valor">${data.longitud}</span></div>
+      `;
+    }
+
+    document.getElementById('inputCiudad').addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') buscar();
+    });
+  </script>
+
+</body>
+</html>
