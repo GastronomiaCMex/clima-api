@@ -3,252 +3,276 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>🌤️ API del Clima</title>
+  <title>Monitor Climático | API del Clima</title>
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Barlow:wght@300;400;600;700&family=Barlow+Condensed:wght@400;700;900&display=swap" rel="stylesheet">
   <style>
+    :root {
+      --bg: #030b0e;
+      --panel: #061318;
+      --border: #0e3040;
+      --accent: #00d4ff;
+      --accent2: #00ff9d;
+      --accent3: #ff6b35;
+      --text: #c8e8f0;
+      --muted: #3a6275;
+      --glow: 0 0 20px rgba(0,212,255,0.15);
+    }
     * { margin: 0; padding: 0; box-sizing: border-box; }
-
     body {
-      font-family: 'Segoe UI', sans-serif;
-      background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460);
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Barlow', sans-serif;
       min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 40px 20px;
-      color: white;
+      overflow-x: hidden;
     }
-
-    h1 {
-      font-size: 2.5rem;
-      margin-bottom: 8px;
-      text-align: center;
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
     }
-
-    p.subtitulo {
-      color: #a0aec0;
-      margin-bottom: 40px;
-      font-size: 1rem;
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: repeating-linear-gradient(
+        0deg, transparent, transparent 2px,
+        rgba(0,0,0,0.05) 2px, rgba(0,0,0,0.05) 4px
+      );
+      pointer-events: none;
+      z-index: 0;
     }
-
-    .buscador {
-      display: flex;
-      gap: 10px;
-      margin-bottom: 40px;
-      width: 100%;
-      max-width: 500px;
-    }
-
-    .buscador input {
-      flex: 1;
-      padding: 14px 20px;
-      border-radius: 12px;
-      border: none;
-      font-size: 1rem;
-      background: rgba(255,255,255,0.1);
-      color: white;
-      outline: none;
-      backdrop-filter: blur(10px);
-    }
-
-    .buscador input::placeholder { color: #a0aec0; }
-
-    .buscador button {
-      padding: 14px 24px;
-      border-radius: 12px;
-      border: none;
-      background: #4299e1;
-      color: white;
-      font-size: 1rem;
-      cursor: pointer;
-      transition: background 0.2s;
-    }
-
-    .buscador button:hover { background: #3182ce; }
-
-    .tabs {
-      display: flex;
-      gap: 10px;
-      margin-bottom: 30px;
-    }
-
-    .tab {
-      padding: 10px 20px;
-      border-radius: 10px;
-      border: 1px solid rgba(255,255,255,0.2);
-      background: rgba(255,255,255,0.05);
-      color: white;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-
-    .tab.activo {
-      background: #4299e1;
-      border-color: #4299e1;
-    }
-
-    .card {
-      background: rgba(255,255,255,0.08);
-      backdrop-filter: blur(20px);
-      border-radius: 20px;
-      padding: 30px;
-      width: 100%;
-      max-width: 500px;
-      border: 1px solid rgba(255,255,255,0.1);
-    }
-
-    .dato {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 14px 0;
-      border-bottom: 1px solid rgba(255,255,255,0.08);
-      font-size: 1rem;
-    }
-
-    .dato:last-child { border-bottom: none; }
-    .dato .label { color: #a0aec0; }
-    .dato .valor { font-weight: 600; font-size: 1.1rem; }
-
-    .pronostico-grid {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-
-    .dia-card {
-      background: rgba(255,255,255,0.05);
-      border-radius: 12px;
-      padding: 12px 16px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .temperatura { font-weight: 700; color: #fbd38d; }
-    .lluvia { color: #90cdf4; font-size: 0.85rem; }
-
-    .error {
-      color: #fc8181;
-      text-align: center;
-      padding: 20px;
-      font-size: 1rem;
-    }
-
-    .loading {
-      text-align: center;
-      color: #a0aec0;
-      padding: 20px;
-    }
-
-    .ciudad-titulo {
-      font-size: 1.5rem;
-      font-weight: 700;
-      margin-bottom: 4px;
-    }
-
-    .pais {
-      color: #a0aec0;
-      margin-bottom: 20px;
-      font-size: 0.9rem;
+    .container { position: relative; z-index: 1; max-width: 900px; margin: 0 auto; padding: 30px 20px; }
+    header { border-bottom: 1px solid var(--border); padding-bottom: 24px; margin-bottom: 30px; }
+    .header-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+    .logo-area h1 { font-family: 'Barlow Condensed', sans-serif; font-size: 2.2rem; font-weight: 900; letter-spacing: 2px; color: white; text-transform: uppercase; line-height: 1; }
+    .logo-area h1 span { color: var(--accent); text-shadow: 0 0 20px rgba(0,212,255,0.5); }
+    .logo-area p { font-family: 'Share Tech Mono', monospace; font-size: 0.7rem; color: var(--muted); letter-spacing: 3px; text-transform: uppercase; margin-top: 4px; }
+    .status-badge { display: flex; align-items: center; gap: 8px; font-family: 'Share Tech Mono', monospace; font-size: 0.7rem; color: var(--accent2); letter-spacing: 2px; text-transform: uppercase; }
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent2); box-shadow: 0 0 10px var(--accent2); animation: pulse 2s infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(0.8); } }
+    .header-meta { display: flex; gap: 30px; margin-top: 16px; }
+    .meta-item { font-family: 'Share Tech Mono', monospace; font-size: 0.65rem; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; }
+    .meta-item span { color: var(--accent); display: block; font-size: 0.75rem; }
+    .search-section { margin-bottom: 24px; }
+    .search-label { font-family: 'Share Tech Mono', monospace; font-size: 0.65rem; color: var(--muted); letter-spacing: 3px; text-transform: uppercase; margin-bottom: 10px; display: block; }
+    .search-row { display: flex; gap: 0; border: 1px solid var(--border); border-radius: 4px; overflow: hidden; transition: border-color 0.3s; }
+    .search-row:focus-within { border-color: var(--accent); box-shadow: var(--glow); }
+    .search-prefix { background: var(--border); padding: 14px 16px; font-family: 'Share Tech Mono', monospace; font-size: 0.75rem; color: var(--accent); letter-spacing: 1px; white-space: nowrap; display: flex; align-items: center; }
+    #inputCiudad { flex: 1; background: var(--panel); border: none; padding: 14px 16px; font-family: 'Share Tech Mono', monospace; font-size: 0.9rem; color: white; outline: none; letter-spacing: 1px; }
+    #inputCiudad::placeholder { color: var(--muted); }
+    .search-btn { background: var(--accent); border: none; padding: 14px 24px; font-family: 'Barlow Condensed', sans-serif; font-size: 0.85rem; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; color: var(--bg); cursor: pointer; transition: all 0.2s; }
+    .search-btn:hover { background: white; }
+    .tabs { display: flex; gap: 2px; margin-bottom: 24px; border-bottom: 1px solid var(--border); }
+    .tab { padding: 10px 20px; background: transparent; border: none; border-bottom: 2px solid transparent; font-family: 'Share Tech Mono', monospace; font-size: 0.7rem; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); cursor: pointer; transition: all 0.2s; margin-bottom: -1px; }
+    .tab:hover { color: var(--text); }
+    .tab.activo { color: var(--accent); border-bottom-color: var(--accent); }
+    .panel { border: 1px solid var(--border); border-radius: 4px; background: var(--panel); overflow: hidden; }
+    .panel-header { display: flex; justify-content: space-between; align-items: center; padding: 12px 20px; border-bottom: 1px solid var(--border); background: rgba(0,212,255,0.03); }
+    .panel-title { font-family: 'Share Tech Mono', monospace; font-size: 0.65rem; color: var(--accent); letter-spacing: 3px; text-transform: uppercase; }
+    .panel-id { font-family: 'Share Tech Mono', monospace; font-size: 0.6rem; color: var(--muted); }
+    .panel-body { padding: 24px; }
+    .estado-inicial { text-align: center; padding: 60px 20px; }
+    .estado-inicial .icono { font-size: 3rem; margin-bottom: 16px; display: block; opacity: 0.4; }
+    .estado-inicial p { font-family: 'Share Tech Mono', monospace; font-size: 0.75rem; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; }
+    .ciudad-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 28px; padding-bottom: 20px; border-bottom: 1px solid var(--border); }
+    .ciudad-nombre { font-family: 'Barlow Condensed', sans-serif; font-size: 2.8rem; font-weight: 900; text-transform: uppercase; letter-spacing: 2px; color: white; line-height: 1; }
+    .ciudad-pais { font-family: 'Share Tech Mono', monospace; font-size: 0.7rem; color: var(--muted); letter-spacing: 3px; text-transform: uppercase; margin-top: 6px; }
+    .temp-big { font-family: 'Barlow Condensed', sans-serif; font-size: 4rem; font-weight: 900; color: var(--accent); text-shadow: 0 0 30px rgba(0,212,255,0.3); line-height: 1; text-align: right; }
+    .datos-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .dato-box { background: rgba(0,212,255,0.03); border: 1px solid var(--border); border-radius: 4px; padding: 16px; transition: border-color 0.2s; }
+    .dato-box:hover { border-color: rgba(0,212,255,0.3); }
+    .dato-label { font-family: 'Share Tech Mono', monospace; font-size: 0.6rem; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 8px; }
+    .dato-valor { font-family: 'Barlow Condensed', sans-serif; font-size: 1.6rem; font-weight: 700; color: white; }
+    .dato-valor.verde { color: var(--accent2); }
+    .dato-valor.naranja { color: var(--accent3); }
+    .pronostico-list { display: flex; flex-direction: column; gap: 8px; }
+    .dia-row { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; align-items: center; padding: 14px 16px; border: 1px solid var(--border); border-radius: 4px; background: rgba(0,212,255,0.02); transition: all 0.2s; }
+    .dia-row:hover { border-color: rgba(0,212,255,0.3); background: rgba(0,212,255,0.05); }
+    .dia-row:first-child { border-color: rgba(0,212,255,0.3); background: rgba(0,212,255,0.06); }
+    .dia-fecha { font-family: 'Share Tech Mono', monospace; font-size: 0.7rem; color: var(--muted); letter-spacing: 1px; }
+    .dia-row:first-child .dia-fecha { color: var(--accent); }
+    .dia-max { font-family: 'Barlow Condensed', sans-serif; font-size: 1.2rem; font-weight: 700; color: var(--accent3); text-align: center; }
+    .dia-min { font-family: 'Barlow Condensed', sans-serif; font-size: 1.2rem; font-weight: 700; color: #6bb8d4; text-align: center; }
+    .dia-lluvia { font-family: 'Share Tech Mono', monospace; font-size: 0.7rem; color: var(--muted); text-align: right; }
+    .coords-display { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+    .coord-box { border: 1px solid var(--border); border-radius: 4px; padding: 20px; text-align: center; background: rgba(0,212,255,0.02); }
+    .coord-label { font-family: 'Share Tech Mono', monospace; font-size: 0.6rem; color: var(--muted); letter-spacing: 3px; text-transform: uppercase; margin-bottom: 10px; }
+    .coord-valor { font-family: 'Share Tech Mono', monospace; font-size: 1.4rem; color: var(--accent2); text-shadow: 0 0 15px rgba(0,255,157,0.3); }
+    .map-link { display: block; text-align: center; padding: 12px; border: 1px solid var(--border); border-radius: 4px; font-family: 'Share Tech Mono', monospace; font-size: 0.7rem; letter-spacing: 2px; text-transform: uppercase; color: var(--accent); text-decoration: none; transition: all 0.2s; }
+    .map-link:hover { background: rgba(0,212,255,0.08); border-color: var(--accent); }
+    .loading-state { text-align: center; padding: 60px 20px; }
+    .loading-bar { width: 200px; height: 2px; background: var(--border); margin: 20px auto 0; border-radius: 2px; overflow: hidden; }
+    .loading-bar::after { content: ''; display: block; height: 100%; width: 40%; background: var(--accent); animation: loading 1s infinite; box-shadow: 0 0 10px var(--accent); }
+    @keyframes loading { 0% { transform: translateX(-100%); } 100% { transform: translateX(350%); } }
+    .loading-text { font-family: 'Share Tech Mono', monospace; font-size: 0.7rem; color: var(--accent); letter-spacing: 3px; text-transform: uppercase; }
+    .error-state { text-align: center; padding: 40px; }
+    .error-state p { font-family: 'Share Tech Mono', monospace; font-size: 0.8rem; color: var(--accent3); letter-spacing: 2px; text-transform: uppercase; }
+    footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; }
+    footer span { font-family: 'Share Tech Mono', monospace; font-size: 0.6rem; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; }
+    .fade-in { animation: fadeIn 0.4s ease forwards; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    @media (max-width: 600px) {
+      .datos-grid { grid-template-columns: 1fr; }
+      .coords-display { grid-template-columns: 1fr; }
+      .ciudad-nombre { font-size: 2rem; }
+      .temp-big { font-size: 3rem; }
+      .header-meta { flex-wrap: wrap; gap: 16px; }
+      .dia-row { grid-template-columns: 1fr 1fr; gap: 6px; }
+      .dia-lluvia { text-align: left; }
     }
   </style>
 </head>
 <body>
-
-  <h1>🌤️ API del Clima</h1>
-  <p class="subtitulo">Consulta el clima de cualquier ciudad del mundo</p>
-
-  <div class="buscador">
-    <input type="text" id="inputCiudad" placeholder="Ej: Cancun, Madrid, Tokyo..." />
-    <button onclick="buscar()">Buscar</button>
+  <div class="container">
+    <header>
+      <div class="header-top">
+        <div class="logo-area">
+          <h1>Monitor <span>Climático</span></h1>
+          <p>Telemetría Meteorológica en Tiempo Real</p>
+        </div>
+        <div class="status-badge">
+          <div class="status-dot"></div>
+          API Activa
+        </div>
+      </div>
+      <div class="header-meta">
+        <div class="meta-item">Fuente<span>Open-Meteo API</span></div>
+        <div class="meta-item">Cobertura<span>Global</span></div>
+        <div class="meta-item">Actualización<span>Tiempo Real</span></div>
+        <div class="meta-item"><span id="hora-actual">--:--:--</span></div>
+      </div>
+    </header>
+    <div class="search-section">
+      <span class="search-label">// Consultar ciudad</span>
+      <div class="search-row">
+        <div class="search-prefix">GET /api/clima?ciudad=</div>
+        <input type="text" id="inputCiudad" placeholder="Cancun, Madrid, Tokyo..." autocomplete="off" />
+        <button class="search-btn" onclick="buscar()">Ejecutar</button>
+      </div>
+    </div>
+    <div class="tabs">
+      <button class="tab activo" onclick="cambiarTab('clima', this)">🌡 Clima Actual</button>
+      <button class="tab" onclick="cambiarTab('pronostico', this)">📅 Pronóstico 7D</button>
+      <button class="tab" onclick="cambiarTab('coordenadas', this)">📍 Coordenadas</button>
+    </div>
+    <div class="panel" id="panel">
+      <div class="panel-header">
+        <span class="panel-title" id="panel-title">// Respuesta API</span>
+        <span class="panel-id" id="panel-id">STATUS: ESPERANDO</span>
+      </div>
+      <div class="panel-body" id="resultado">
+        <div class="estado-inicial">
+          <span class="icono">🌐</span>
+          <p>Ingresa una ciudad para iniciar la consulta</p>
+        </div>
+      </div>
+    </div>
+    <footer>
+      <span>Monitor Climático v1.0.0</span>
+      <span>Powered by Open-Meteo · Node.js · Express</span>
+    </footer>
   </div>
-
-  <div class="tabs">
-    <button class="tab activo" onclick="cambiarTab('clima')">🌡️ Clima</button>
-    <button class="tab" onclick="cambiarTab('pronostico')">📅 Pronóstico</button>
-    <button class="tab" onclick="cambiarTab('coordenadas')">📍 Coordenadas</button>
-  </div>
-
-  <div class="card" id="resultado">
-    <p class="loading">Escribe una ciudad y presiona Buscar 🔍</p>
-  </div>
-
   <script>
     let tabActual = 'clima';
-
-    function cambiarTab(tab) {
+    function actualizarHora() {
+      const now = new Date();
+      document.getElementById('hora-actual').textContent = now.toLocaleTimeString('es-MX', { hour12: false });
+    }
+    actualizarHora();
+    setInterval(actualizarHora, 1000);
+    function cambiarTab(tab, el) {
       tabActual = tab;
       document.querySelectorAll('.tab').forEach(t => t.classList.remove('activo'));
-      event.target.classList.add('activo');
-      const ciudad = document.getElementById('inputCiudad').value;
+      el.classList.add('activo');
+      const prefijos = { clima: 'GET /api/clima?ciudad=', pronostico: 'GET /api/pronostico?ciudad=', coordenadas: 'GET /api/coordenadas?ciudad=' };
+      document.querySelector('.search-prefix').textContent = prefijos[tab];
+      const ciudad = document.getElementById('inputCiudad').value.trim();
       if (ciudad) buscar();
     }
-
     async function buscar() {
       const ciudad = document.getElementById('inputCiudad').value.trim();
       if (!ciudad) return;
-
       const resultado = document.getElementById('resultado');
-      resultado.innerHTML = '<p class="loading">Cargando... ⏳</p>';
-
+      const panelId = document.getElementById('panel-id');
+      panelId.textContent = 'STATUS: CARGANDO...';
+      resultado.innerHTML = `<div class="loading-state"><p class="loading-text">Sincronizando datos...</p><div class="loading-bar"></div></div>`;
       try {
         const res = await fetch(`/api/${tabActual}?ciudad=${encodeURIComponent(ciudad)}`);
         const data = await res.json();
-
         if (data.error) {
-          resultado.innerHTML = `<p class="error">❌ ${data.error}</p>`;
+          panelId.textContent = 'STATUS: 404 NOT FOUND';
+          resultado.innerHTML = `<div class="error-state"><p>⚠ ${data.error}</p></div>`;
           return;
         }
-
+        panelId.textContent = `STATUS: 200 OK · ${new Date().toLocaleTimeString('es-MX', {hour12:false})}`;
         if (tabActual === 'clima') mostrarClima(data);
         if (tabActual === 'pronostico') mostrarPronostico(data);
         if (tabActual === 'coordenadas') mostrarCoordenadas(data);
-
       } catch (e) {
-        resultado.innerHTML = '<p class="error">❌ Error al conectar con la API</p>';
+        panelId.textContent = 'STATUS: ERROR DE CONEXIÓN';
+        resultado.innerHTML = `<div class="error-state"><p>⚠ No se pudo conectar con la API</p></div>`;
       }
     }
-
     function mostrarClima(data) {
+      const esDia = data.es_de_dia === 'Sí';
+      document.getElementById('panel-title').textContent = '// Clima Actual';
       document.getElementById('resultado').innerHTML = `
-        <div class="ciudad-titulo">📍 ${data.ciudad}</div>
-        <div class="pais">${data.pais}</div>
-        <div class="dato"><span class="label">🌡️ Temperatura</span><span class="valor">${data.temperatura}</span></div>
-        <div class="dato"><span class="label">💨 Viento</span><span class="valor">${data.viento}</span></div>
-        <div class="dato"><span class="label">☀️ Es de día</span><span class="valor">${data.es_de_dia}</span></div>
-        <div class="dato"><span class="label">🕐 Actualizado</span><span class="valor">${data.actualizado}</span></div>
-      `;
+        <div class="fade-in">
+          <div class="ciudad-header">
+            <div>
+              <div class="ciudad-nombre">${data.ciudad}</div>
+              <div class="ciudad-pais">${data.pais}</div>
+            </div>
+            <div class="temp-big">${data.temperatura}</div>
+          </div>
+          <div class="datos-grid">
+            <div class="dato-box"><div class="dato-label">💨 Velocidad del Viento</div><div class="dato-valor">${data.viento}</div></div>
+            <div class="dato-box"><div class="dato-label">☀️ Período del Día</div><div class="dato-valor ${esDia ? 'naranja' : 'verde'}">${esDia ? 'DÍA' : 'NOCHE'}</div></div>
+            <div class="dato-box"><div class="dato-label">🕐 Última Actualización</div><div class="dato-valor" style="font-size:1rem; font-family:'Share Tech Mono',monospace;">${data.actualizado}</div></div>
+            <div class="dato-box"><div class="dato-label">📡 Fuente de Datos</div><div class="dato-valor verde" style="font-size:1rem;">OPEN-METEO</div></div>
+          </div>
+        </div>`;
     }
-
     function mostrarPronostico(data) {
-      const dias = data.pronostico.map(d => `
-        <div class="dia-card">
-          <span>${d.fecha}</span>
-          <span class="temperatura">↑${d.temp_maxima} ↓${d.temp_minima}</span>
-          <span class="lluvia">🌧️ ${d.precipitacion}</span>
-        </div>
-      `).join('');
-
+      document.getElementById('panel-title').textContent = '// Pronóstico 7 Días';
+      const diasHTML = data.pronostico.map((d, i) => `
+        <div class="dia-row">
+          <span class="dia-fecha">${i === 0 ? 'HOY · ' : ''}${d.fecha}</span>
+          <span class="dia-max">↑ ${d.temp_maxima}</span>
+          <span class="dia-min">↓ ${d.temp_minima}</span>
+          <span class="dia-lluvia">🌧 ${d.precipitacion}</span>
+        </div>`).join('');
       document.getElementById('resultado').innerHTML = `
-        <div class="ciudad-titulo">📍 ${data.ciudad}</div>
-        <div class="pais">${data.pais}</div>
-        <div class="pronostico-grid">${dias}</div>
-      `;
+        <div class="fade-in">
+          <div class="ciudad-header">
+            <div><div class="ciudad-nombre">${data.ciudad}</div><div class="ciudad-pais">${data.pais}</div></div>
+          </div>
+          <div class="pronostico-list">${diasHTML}</div>
+        </div>`;
     }
-
     function mostrarCoordenadas(data) {
+      document.getElementById('panel-title').textContent = '// Datos Geográficos';
       document.getElementById('resultado').innerHTML = `
-        <div class="ciudad-titulo">📍 ${data.nombre}</div>
-        <div class="pais">${data.pais}</div>
-        <div class="dato"><span class="label">🌐 Latitud</span><span class="valor">${data.latitud}</span></div>
-        <div class="dato"><span class="label">🌐 Longitud</span><span class="valor">${data.longitud}</span></div>
-      `;
+        <div class="fade-in">
+          <div class="ciudad-header">
+            <div><div class="ciudad-nombre">${data.nombre}</div><div class="ciudad-pais">${data.pais}</div></div>
+          </div>
+          <div class="coords-display">
+            <div class="coord-box"><div class="coord-label">🌐 Latitud</div><div class="coord-valor">${data.latitud}°</div></div>
+            <div class="coord-box"><div class="coord-label">🌐 Longitud</div><div class="coord-valor">${data.longitud}°</div></div>
+          </div>
+          <a class="map-link" href="https://www.google.com/maps?q=${data.latitud},${data.longitud}" target="_blank">→ Ver en Google Maps</a>
+        </div>`;
     }
-
-    document.getElementById('inputCiudad').addEventListener('keypress', function(e) {
+    document.getElementById('inputCiudad').addEventListener('keypress', e => {
       if (e.key === 'Enter') buscar();
     });
   </script>
-
 </body>
 </html>
