@@ -1,8 +1,11 @@
 const axios = require('axios');
 
+const headers = {
+  'User-Agent': 'ApiClimaAnibeth/1.0 (contacto@gmail.com)'
+};
 async function obtenerCoordenadas(ciudad) {
-  const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(ciudad)}&count=1&language=es`;
-  const respuesta = await axios.get(url);
+  const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(ciudad)}&count=1&language=es&format=json`;
+  const respuesta = await axios.get(url, { headers })
 
   if (!respuesta.data.results || respuesta.data.results.length === 0) {
     throw new Error(`Ciudad "${ciudad}" no encontrada`);
@@ -24,7 +27,7 @@ exports.climaActual = async (req, res) => {
 
     const coords = await obtenerCoordenadas(ciudad);
     const url = `https://api.open-meteo.com/v1/forecast?latitude=${coords.latitud}&longitude=${coords.longitud}&current_weather=true&timezone=auto`;
-    const { data } = await axios.get(url);
+    const { data } = await axios.get(url, { headers })
     const clima = data.current_weather;
 
     res.json({
@@ -48,8 +51,7 @@ exports.pronostico = async (req, res) => {
 
     const coords = await obtenerCoordenadas(ciudad);
     const url = `https://api.open-meteo.com/v1/forecast?latitude=${coords.latitud}&longitude=${coords.longitud}&daily=temperature_2m_max,temperature_2m_min,precipitation_sum&timezone=auto`;
-    const { data } = await axios.get(url);
-
+    const { data } = await axios.get(url, { headers })
     const dias = data.daily.time.map((fecha, i) => ({
       fecha,
       temp_maxima:   `${data.daily.temperature_2m_max[i]} °C`,
